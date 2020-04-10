@@ -8,14 +8,16 @@ class Parser:
 
         self.inputFile = open(input_file_name, "r")
 
-        self.remainingLineInput = self.getLine() #@TODO: Fix the memory cost here
+        self.remainingLineInput = self.getLine()
         self.alignCycle()
 
 
-        self.slot_match = " +Slot\[{slot_num}\]: V:\- Req:\- Wen:\- P:\(!,!,!\) "
+        self.slot_match = " +Slot\[{slot_num}\]: V:\- Req:\- Wen:\- P:(?P<slot{slot_num}_{slot_type}_P>\(\S,\S,\S\)) "
         self.slot_match += "PRegs:Dst:\(Typ:(?P<slot{slot_num}_{slot_type}_typ_code>\S) #: *(?P<slot{slot_num}_{slot_type}_typ_num>\d+)\) "
         self.slot_match += "Srcs:(?P<slot{slot_num}_{slot_type}_srcs>\( *\d+, *\d+, *\d+\)) \[PC:(?P<slot{slot_num}_{slot_type}_PC>0x[a-f0-9]+) Inst:DASM\((?P<slot{slot_num}_{slot_type}_DASM>[a-f0-9]+)\) UOPCode: *(?P<slot{slot_num}_{slot_type}_uopcode>\d+)\] "
         self.slot_match += "RobIdx: *(?P<slot{slot_num}_{slot_type}_robidx>\d+) BMsk:(?P<slot{slot_num}_{slot_type}_BMsk>0x[a-f0-9]+) Imm:(?P<slot{slot_num}_{slot_type}_Imm>0x[a-f0-9]+)\n"
+
+        self.rob_match = " +ROB\[ *{rob_num"
 
         self.outputFile = open(output_file_name, "w")
 
@@ -65,6 +67,12 @@ class Parser:
     def hasInput(self):
         return len(self.remainingLineInput) > 0
 
+    def peek_line(self):
+        pos = self.inputFile.tell()
+        line = self.inputFile.readline()
+        self.inputFile.seek(pos)
+        return line
+
 
 
 #Start of actual Code
@@ -102,12 +110,6 @@ while parser.hasInput():
     #Int Issue Slots
     parser.matchAndConsume("int issue slots:\n")
     parser.matchAndConsumeSlots(8, "int")
-    # slot_match = " +Slot\[{slot_num}\]: V:\- Req:\- Wen:\- P:\(!,!,!\) "
-    # slot_match += "PRegs:Dst:\(Typ:(?P<slot{slot_num}_{slot_type}_typ_code>\S) #: *(?P<slot{slot_num}_{slot_type}_typ_num>\d+)\) "
-    # slot_match += "Srcs:(?P<slot{slot_num}_{slot_type}_srcs>\( *\d+, *\d+, *\d+\)) \[PC:(?P<slot{slot_num}_{slot_type}_PC>0x[a-f0-9]+) Inst:DASM\((?P<slot{slot_num}_{slot_type}_DASM>[a-f0-9]+)\) UOPCode: *(?P<slot{slot_num}_{slot_type}_uopcode>\d+)\] "
-    # slot_match += "RobIdx: *(?P<slot{slot_num}_{slot_type}_robidx>\d+) BMsk:(?P<slot{slot_num}_{slot_type}_BMsk>0x[a-f0-9]+) Imm:(?P<slot{slot_num}_{slot_type}_Imm>0x[a-f0-9]+)\n"
-    # for n in range(0,8):
-    #     parser.matchAndConsume(slot_match.format(slot_num=n,slot_type="int"))
     #Fetch Buffer
     parser.matchAndConsume("FetchBuffer:\n")
     parser.matchAndConsume(" +Fetch3: Enq:\(V:\- Msk:0x5 PC:0x00800000e0\) Clear:\-\n")
@@ -116,6 +118,15 @@ while parser.hasInput():
     #Mem Issue Slots
     parser.matchAndConsume("mem issue slots:\n")
     parser.matchAndConsumeSlots(8,"memIss")
+    #fp issue slots
+    parser.matchAndConsume(" fp issue slots:\n")
+    parser.matchAndConsumeSlots(8, "fpIssue")
+    #BR-Unit
+    parser.matchAndConsume("BR-UNIT:\n")
+    parser.matchAndConsume(" +PC:0x00800000c8\+0x00 Next:\(V:V PC:0x00800000d0\) BJAddr:0x00800000c0\n")
+    #ROB
+    parser.matchAndConsume("ROB:\n")
+    parser.matchAndConsume(" +Xcpt: V:- Cause:0x0000000000000011 RobIdx:21 BMsk:0x0 BadVAddr:0x0000000000010080\n")
 
 
     # slot_match = " +Slot\[{slot_num}\]: V:\- Req:\- Wen:\- P:\(!,!,!\) "
@@ -127,8 +138,9 @@ while parser.hasInput():
     #@DEBUG: Remove when doing more than one cycle
     break
 if debug:
-    print(parser.remainingLineInput[:300])
-    print("////////////////////////")
-    print(parser.kvStore)
+    print(parser.remainingLineInput)
+    print(parser.peek_line())
+    # print("////////////////////////")
+    # print(parser.kvStore)
 
 
