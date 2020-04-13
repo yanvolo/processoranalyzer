@@ -195,7 +195,11 @@ while parser.hasInput():
     parser.matchAndConsume("\s+IMemResp: BTB: Tkn:- Idx:0 TRG:0x00000\n")
     parser.matchAndConsume("\s+Fetch3:\n")
     parser.matchAndConsume("\s+FbEnq: V:- PC:0x00800000e0 Msk:0x5\s*\n")
+    #@TODO: (High) Parameterize all these fields properly and test on complete sample
+    #@TODO: (High) Test script on other debug logs.
 
+
+    #@TODO: (Low) Add code that converts values to right type to make it easier to manipulate down the line
     parser.commitLine()
 
 if debug:
