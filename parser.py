@@ -7,7 +7,7 @@ class Parser:
 
         self.inputFile = open(input_file_name, "r")
 
-        self.remainingLineInput = self.getLine()
+        self.remainingLineInput = self._getLine()
         self.alignCycle()
 
         self.outputFile = open(output_file_name, "w")
@@ -19,7 +19,7 @@ class Parser:
         self.outputFile.close()
         self.inputFile.close()
 
-    def getLine(self):
+    def _getLine(self):
         return self.inputFile.readline()
 
     def matchAndConsume(self, regex):
@@ -34,7 +34,7 @@ class Parser:
             self.kvStore.update(match.groupdict())
             self.remainingLineInput = self.remainingLineInput[match.end():]
             if len(self.remainingLineInput) == 0:
-                self.remainingLineInput = self.getLine()
+                self.remainingLineInput = self._getLine()
         else:
             print("Mismatch occured at cycle %d following location:" % int(self.kvStore['cycle_count']))
             print(self.remainingLineInput[:300])
@@ -58,7 +58,7 @@ class Parser:
         while not match and self.hasInput():
             self.remainingLineInput = self.remainingLineInput[1:]
             if len(self.remainingLineInput) == 0:
-                self.remainingLineInput = self.getLine()
+                self.remainingLineInput = self._getLine()
             match = re.match("--- Cycle=", self.remainingLineInput)
 
     def hasInput(self):
