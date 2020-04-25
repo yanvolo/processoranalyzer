@@ -46,10 +46,6 @@ class Parser:
         for n in range(0,match_count):
             parser.matchAndConsume(match_str.format(num=n))
 
-    def matchAndConsumeInt(self, field_name):
-        self.matchAndConsume("(?P<{name}>\s*\d+)".format(name=field_name))
-
-
     def commitLine(self):
         if self.output == None:
             self.output = csv.DictWriter(self.outputFile,self.kvStore.keys())
@@ -178,6 +174,8 @@ while parser.hasInput():
     parser.matchAndConsume("\s+Enq:\(V:(?P<ftq_enq_v>[:sym:]) Rdy:(?P<ftq_enq_rdy>[:sym:]) Idx:(?P<ftq_enq_idx>[:int:])\) Commit:\(V:(?P<ftq_commit_v>[:sym:]) Idx:(?P<ftq_commit_idx>[:int:])\) BRInfo:\(V&Mispred:[:sym:] Idx:[:int:]\) Enq,Cmt,DeqPtrs:(?P<ftq_brinfo_addr>\(([:int:])*([:int:])\))[:eol:]")
     parser.matchAndConsumeMult(ftq_entry_match, 16)
     parser.matchAndConsume("[:eol:]")
+    if re.match("\*\*\* PASSED \*\*\*",parser.remainingLineInput): #@TODO: (High) Make more graceful recovery from end
+        break
     #Registers
     parser.matchAndConsumeMult(rega_match, 48) #Group A Match
     parser.matchAndConsumeMult(regb_match, 52)  # Group B Match
@@ -195,7 +193,7 @@ while parser.hasInput():
     #BTB-SA
     parser.matchAndConsume("BTB-SA:[:eol:]")
     parser.matchAndConsumeMult(match_btb_write,2)
-    parser.matchAndConsume("\s+Predicted \([:sym:]\): Hits:[:b16:] \(PC:[:hex:] \-\> TARG:[:hex:]\) CFI:[:syms:][:eol:]")
+    parser.matchAndConsume("\s+Predicted \([:sym:]\): Hits:(?P<btb_hits>[:b16:]) \(PC:[:hex:] \-\> TARG:[:hex:]\) CFI:[:syms:][:eol:]")
     parser.matchAndConsume("\s+BIM: Predicted \([:sym:]\): Idx:[:int:] Row:[:hex:][:eol:]")
     #Fetch Controller
     parser.matchAndConsume("Fetch Controller:[:eol:]")
@@ -215,7 +213,7 @@ while parser.hasInput():
 
     #@TODO: (Low) Add code that converts values to right type to make it easier to manipulate down the line
     parser.commitLine()
-    print("\rOn Cycle %d" %cycle_count),
+    print("\rOn Cycle %d" % (cycle_count)),
     cycle_count = cycle_count + 1
 
 if debug:
